@@ -19,7 +19,8 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/Nelarius/imnodes.git
   GIT_TAG master
 )
-FetchContent_Populate(imnodes)  # just populate, don't "make available"
+# just populate, don't "make available"
+FetchContent_Populate(imnodes)
 
 # ---- Backends ----
 set(IMGUI_BACKENDS
@@ -33,6 +34,7 @@ find_package(OpenGL REQUIRED)
 
 add_executable(imgui_minimal
   main.cpp
+  app.cpp
   ${imgui_SOURCE_DIR}/imgui.cpp
   ${imgui_SOURCE_DIR}/imgui_draw.cpp
   ${imgui_SOURCE_DIR}/imgui_tables.cpp
@@ -45,10 +47,12 @@ add_executable(imgui_minimal
 )
 
 target_include_directories(imgui_minimal PRIVATE
+  .
   ${imgui_SOURCE_DIR}
   ${imgui_SOURCE_DIR}/backends
   ${SDL2_INCLUDE_DIRS}
-  ${imnodes_SOURCE_DIR}    # so we can include <imnodes.h>
+  # so we can include <imnodes.h>
+  ${imnodes_SOURCE_DIR}
 )
 
 target_link_libraries(imgui_minimal PRIVATE
