@@ -1,88 +1,82 @@
 #include "app.h"
-#include "imgui_impl_sdl2.h"
-#include "imgui_impl_opengl3.h"
 #include <stdio.h>
-#include <GL/gl.h>
 
-App::App() {
-    initSDL();
-    initImGui();
-}
+App::App() {}
 
 App::~App() {
-    cleanup();
+  cleanup();
 }
 
-void App::initSDL() {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
-        printf("Error: %s\n", SDL_GetError());
-        exit(-1);
-    }
+bool App::initialize() {
+  if (!renderer.initialize()) {
+    printf("Failed to initialize renderer\n");
+    return false;
+  }
 
-    window = SDL_CreateWindow("ImGui + ImNodes App",
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+  if (!ui_manager.initialize(renderer.getWindow(), renderer.getGLContext())) {
+    printf("Failed to initialize UI manager\n");
+    return false;
+  }
 
-    gl_context = SDL_GL_CreateContext(window);
-    SDL_GL_MakeCurrent(window, gl_context);
-    SDL_GL_SetSwapInterval(1);
-}
+  if (!node_editor.initialize()) {
+    printf("Failed to initialize node editor\n");
+    return false;
+  }
 
-void App::initImGui() {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImNodes::CreateContext();
-
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
-    ImGui_ImplOpenGL3_Init("#version 150");
+  return true;
 }
 
 void App::cleanup() {
-    ImNodes::DestroyContext();
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
+  node_editor.shutdown();
+  ui_manager.shutdown();
+}
 
-    SDL_GL_DeleteContext(gl_context);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+void App::handleEvents(bool& done) {
+  SDL_Event event;
+  while (SDL_PollEvent(&event)) {
+    ui_manager.processEvent(event);
+
+    if (event.type == SDL_QUIT) {
+      done = true;
+    }
+
+    if (event.type == SDL_WINDOWEVENT) {
+      if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+        done = true;
+      }
+    }
+  }
+}
+
+void App::update() {
+  // update application state
+}
+
+void App::render() {
+  renderer.beginFrame();
+  renderer.clear();
+
+  ui_manager.newFrame();
+
+  node_editor.showEditor("Node Editor");
+
+  ui_manager.render();
+  renderer.endFrame();
 }
 
 int App::run() {
-    bool done = false;
-    bool show_demo_window = true;
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+  if (!initialize()) {
+    printf("Failed to initialize application\n");
+    return -1;
+  }
 
-    while (!done) {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            ImGui_ImplSDL2_ProcessEvent(&event);
-            if (event.type == SDL_QUIT)
-                done = true;
-        }
+  bool done = false;
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame();
-        ImGui::NewFrame();
+  while (!done) {
+    handleEvents(done);
+    update();
+    render();
+  }
 
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
-        ImGui::Begin("Node Editor");
-        ImNodes::BeginNodeEditor();
-        ImNodes::EndNodeEditor();
-        ImGui::End();
-
-        ImGui::Render();
-        glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        SDL_GL_SwapWindow(window);
-    }
-
-    return 0;
+  return 0;
 }

@@ -1,21 +1,24 @@
 #pragma once
-#include "imgui.h"
-#include "imnodes.h"
+#include "renderer.h"
+#include "ui_manager.h"
+#include "node_editor.h"
 #include <SDL.h>
 
 class App {
-public:
-  App();
-  ~App();
+  public:
+    App();
+    ~App();
 
-  int run();
-private:
-  SDL_Window* window = nullptr;
-  SDL_GLContext gl_context = nullptr;
+    int run();
 
-  void initSDL();
-  void initImGui();
-  void cleanup();
+  private:
+    Renderer renderer;
+    UIManager ui_manager;
+    NodeEditor node_editor;
+
+    bool initialize();
+    void cleanup();
+    void handleEvents(bool& done);
+    void update();
+    void render();
 };
-
-
