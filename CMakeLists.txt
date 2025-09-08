@@ -33,8 +33,8 @@ find_package(SDL2 REQUIRED)
 find_package(OpenGL REQUIRED)
 
 add_executable(imgui_minimal
-  main.cpp
-  app.cpp
+  src/main.cpp
+  src/app.cpp
   ${imgui_SOURCE_DIR}/imgui.cpp
   ${imgui_SOURCE_DIR}/imgui_draw.cpp
   ${imgui_SOURCE_DIR}/imgui_tables.cpp
@@ -47,7 +47,7 @@ add_executable(imgui_minimal
 )
 
 target_include_directories(imgui_minimal PRIVATE
-  .
+  include
   ${imgui_SOURCE_DIR}
   ${imgui_SOURCE_DIR}/backends
   ${SDL2_INCLUDE_DIRS}
@@ -63,4 +63,3 @@ target_link_libraries(imgui_minimal PRIVATE
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   target_compile_options(imgui_minimal PRIVATE -Wall -Wextra -Wpedantic)
 endif()
-
