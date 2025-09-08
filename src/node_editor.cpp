@@ -1,4 +1,5 @@
 #include "node_editor.h"
+#include "nodes.h"
 #include <cstring>
 
 NodeEditor::NodeEditor() {}
@@ -10,6 +11,9 @@ NodeEditor::~NodeEditor() {
 bool NodeEditor::initialize() {
   ImNodes::CreateContext();
   initialized = true;
+  createNode("Start", ImVec2(0,0));
+  createNode("GET", ImVec2(0,0));
+  createNode("POST", ImVec2(0,0));
   return true;
 }
 
@@ -23,7 +27,7 @@ void NodeEditor::shutdown() {
 void NodeEditor::render() {
   ImNodes::BeginNodeEditor();
 
-  // Node Editor Logic
+  drawNodes();
 
   ImNodes::MiniMap(0.2f, ImNodesMiniMapLocation_BottomRight);
   ImNodes::EndNodeEditor();
@@ -41,4 +45,29 @@ void NodeEditor::showEditor(const char* window_title) {
       ImGuiWindowFlags_NoBringToFrontOnFocus);
   render();
   ImGui::End();
+}
+
+void NodeEditor::createNode(const std::string& nodeType, ImVec2 position) {
+  std::unique_ptr<Node> newNode;
+  
+  if (nodeType == "Start") {
+    newNode = std::make_unique<StartNode>(next_node_id);
+  } else if (nodeType == "GET") {
+    newNode = std::make_unique<GetNode>(next_node_id);
+  } else if (nodeType == "POST") {
+    newNode = std::make_unique<PostNode>(next_node_id);
+  }
+  
+  if (newNode) {
+    ImNodes::SetNodeGridSpacePos(next_node_id, position);
+    
+    nodes.push_back(std::move(newNode));
+    next_node_id += 10;
+  }
+}
+
+void NodeEditor::drawNodes() const {
+  for (auto const& n : nodes) {
+    n->draw();
+  }
 }
