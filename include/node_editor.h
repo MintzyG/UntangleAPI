@@ -21,6 +21,11 @@ class NodeEditor {
     bool initialized = false;
     int next_node_id = 1;
 
+    void handleContextMenu();
+    void handleRightClick();
+    ImVec2 context_menu_pos;
+    bool right_clicked_in_editor = false;
+
     void createNode(const std::string& nodeType, ImVec2 position);
     void drawNodes() const;
 };

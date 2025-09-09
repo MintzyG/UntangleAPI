@@ -16,3 +16,4 @@ class UIManager {
   private:
     bool initialized = false;
 };
+

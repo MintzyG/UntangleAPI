@@ -48,3 +48,4 @@ void UIManager::render() {
 bool UIManager::processEvent(const SDL_Event& event) {
   return ImGui_ImplSDL2_ProcessEvent(&event);
 }
+
