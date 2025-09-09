@@ -1,5 +1,6 @@
 #include "node_editor.h"
 #include "nodes.h"
+#include "link.h"
 #include <cstring>
 
 NodeEditor::NodeEditor() {}
@@ -28,12 +29,14 @@ void NodeEditor::render() {
   ImNodes::BeginNodeEditor();
 
   drawNodes();
+  drawLinks();
 
   handleRightClick();
 
   ImNodes::MiniMap(0.2f, ImNodesMiniMapLocation_BottomRight);
   ImNodes::EndNodeEditor();
 
+  createLinks();
   handleContextMenu();
 }
 
@@ -73,6 +76,19 @@ void NodeEditor::createNode(const std::string& nodeType, ImVec2 position) {
 void NodeEditor::drawNodes() const {
   for (auto const& n : nodes) {
     n->draw();
+  }
+}
+
+void NodeEditor::createLinks() {
+  int start_attr, end_attr;
+  if (ImNodes::IsLinkCreated(&start_attr, &end_attr)) {
+    links.push_back(std::make_unique<Link>(next_link_id++, start_attr, end_attr));
+  }
+}
+
+void NodeEditor::drawLinks() const {
+  for (const auto& link : links) {
+    ImNodes::Link(link->id, link->start_attr, link->end_attr);
   }
 }
 

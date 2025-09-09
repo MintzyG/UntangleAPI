@@ -39,6 +39,7 @@ add_executable(imgui_minimal
   src/ui_manager.cpp
   src/renderer.cpp
   src/nodes.cpp
+  src/link.cpp
   ${imgui_SOURCE_DIR}/imgui.cpp
   ${imgui_SOURCE_DIR}/imgui_draw.cpp
   ${imgui_SOURCE_DIR}/imgui_tables.cpp
