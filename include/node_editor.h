@@ -30,8 +30,10 @@ class NodeEditor {
     bool right_clicked_in_editor = false;
 
     void createNode(const std::string& nodeType, ImVec2 position);
+    void deleteNodes();
     void drawNodes() const;
 
     void createLinks();
+    void deleteLinks();
     void drawLinks() const;
 };

@@ -2,6 +2,8 @@
 #include "nodes.h"
 #include "link.h"
 #include <cstring>
+#include <algorithm>
+#include <memory>
 
 NodeEditor::NodeEditor() {}
 
@@ -52,6 +54,8 @@ void NodeEditor::showEditor(const char* window_title) {
       ImGuiWindowFlags_NoBringToFrontOnFocus);
   render();
   ImGui::End();
+  deleteNodes();
+  deleteLinks();
 }
 
 void NodeEditor::createNode(const std::string& nodeType, ImVec2 position) {
@@ -132,5 +136,58 @@ void NodeEditor::handleContextMenu() {
     }
 
     ImGui::EndPopup();
+  }
+}
+
+void NodeEditor::deleteLinks() {
+  if (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Backspace)) {
+    std::vector<int> selected_links;
+    selected_links.resize(ImNodes::NumSelectedLinks());
+    ImNodes::GetSelectedLinks(selected_links.data());
+
+    for (int selected_id : selected_links) {
+      links.erase(
+          std::remove_if(links.begin(), links.end(),
+            [selected_id](const std::unique_ptr<Link>& l) {
+            return l->id == selected_id;
+            }),
+          links.end()
+          );
+    }
+  }
+
+  int link_id;
+  if (ImNodes::IsLinkDestroyed(&link_id)) {
+    links.erase(
+        std::remove_if(links.begin(), links.end(),
+          [link_id](const std::unique_ptr<Link>& l) {
+          return l->id == link_id;
+          }),
+        links.end()
+        );
+  }
+}
+
+void NodeEditor::deleteNodes() {
+  if (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Backspace)) {
+    nodes.erase(
+        std::remove_if(nodes.begin(), nodes.end(),
+          [&](const std::unique_ptr<Node>& n) {
+          if (ImNodes::IsNodeSelected(n->getId())) {
+          auto nodeAttributes = n->getAttributeIds();
+          links.erase(
+              std::remove_if(links.begin(), links.end(),
+                [&](const std::unique_ptr<Link>& l) {
+                return std::find(nodeAttributes.begin(), nodeAttributes.end(), l->start_attr) != nodeAttributes.end() ||
+                std::find(nodeAttributes.begin(), nodeAttributes.end(), l->end_attr) != nodeAttributes.end();
+                }),
+              links.end()
+              );
+          return true;
+          }
+          return false;
+          }),
+        nodes.end()
+        );
   }
 }
