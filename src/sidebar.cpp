@@ -16,3 +16,9 @@ void Sidebar::render() {
 
   ImGui::End();
 }
+
+bool Sidebar::shouldShowNodeEditor() const {
+  return current_view_mode == ViewMode::Orchestrations &&
+    current_project_id != -1 &&
+    current_orchestration_id != -1;
+}
