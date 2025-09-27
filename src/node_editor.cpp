@@ -33,8 +33,6 @@ void NodeEditor::render(const Sidebar& sidebar) {
     return;
   }
 
-  int orchestration_id = sidebar.getCurrentOrchestrationId();
-
   ImNodes::BeginNodeEditor();
 
   drawNodes();

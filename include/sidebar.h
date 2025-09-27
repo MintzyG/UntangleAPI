@@ -1,5 +1,6 @@
 #pragma once
 
+#include "project.h"
 #include "imgui.h"
 
 enum class ViewMode {
@@ -9,7 +10,7 @@ enum class ViewMode {
 
 class Sidebar {
   public:
-    Sidebar();
+    Sidebar(ProjectManager& project_manager);
 
     void render();
 
@@ -20,8 +21,13 @@ class Sidebar {
     bool shouldShowNodeEditor() const;
 
     static constexpr float SIDEBAR_WIDTH = 250.0f;
+
   private:
+    ProjectManager& project_manager;
     ViewMode current_view_mode = ViewMode::Projects;
     int current_project_id = -1;
     int current_orchestration_id = -1;
+
+    void renderProjectsView();
+    void renderOrchestrationsView();
 };
