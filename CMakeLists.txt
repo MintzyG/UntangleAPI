@@ -37,6 +37,7 @@ add_executable(imgui_minimal
   src/app.cpp
   src/node_editor.cpp
   src/ui_manager.cpp
+  src/sidebar.cpp
   src/renderer.cpp
   src/nodes.cpp
   src/link.cpp

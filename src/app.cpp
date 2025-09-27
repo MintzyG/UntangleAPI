@@ -58,6 +58,8 @@ void App::render() {
 
   ui_manager.newFrame();
 
+  sidebar.render();
+
   node_editor.showEditor("Node Editor");
 
   ui_manager.render();
