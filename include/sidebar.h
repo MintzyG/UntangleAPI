@@ -28,6 +28,13 @@ class Sidebar {
     int current_project_id = -1;
     int current_orchestration_id = -1;
 
+    char new_project_name[256] = "";
+    char new_orchestration_name[256] = "";
+    bool show_create_project_popup = false;
+    bool show_create_orchestration_popup = false;
+
     void renderProjectsView();
     void renderOrchestrationsView();
+    void renderCreateProjectPopup();
+    void renderCreateOrchestrationPopup();
 };
