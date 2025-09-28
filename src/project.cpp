@@ -13,6 +13,16 @@ void Project::addOrchestration(const std::string& name) {
   orchestrations.push_back(std::make_unique<Orchestration>(next_orchestration_id++, name));
 }
 
+void Project::removeOrchestration(int orchestration_id) {
+  orchestrations.erase(
+      std::remove_if(orchestrations.begin(), orchestrations.end(),
+        [orchestration_id](const std::unique_ptr<Orchestration>& o) {
+          return o->id == orchestration_id;
+        }),
+        orchestrations.end()
+      );
+}
+
 Orchestration* Project::getOrchestration(int orchestration_id) {
   for(auto& orch : orchestrations) {
     if (orch->id == orchestration_id) {
@@ -27,6 +37,16 @@ ProjectManager::ProjectManager() {}
 
 void ProjectManager::addProject(const std::string& name) {
   projects.push_back(std::make_unique<Project>(next_project_id++, name));
+}
+
+void ProjectManager::removeProject(int project_id) {
+  projects.erase(
+      std::remove_if(projects.begin(), projects.end(),
+        [project_id](const std::unique_ptr<Project>& p) {
+          return p->id == project_id;
+        }),
+      projects.end()
+      );
 }
 
 Project* ProjectManager::getProject(int project_id) {

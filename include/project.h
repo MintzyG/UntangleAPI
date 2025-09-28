@@ -20,6 +20,7 @@ class Project {
     Project(int id, const std::string& name);
 
     void addOrchestration(const std::string& name);
+    void removeOrchestration(int orchestration_id);
     Orchestration* getOrchestration(int orchestration_id);
   private:
     int next_orchestration_id = 1000;
@@ -30,6 +31,7 @@ class ProjectManager {
     ProjectManager();
 
     void addProject(const std::string& name);
+    void removeProject(int project_id);
     Project* getProject(int project_id);
 
     const std::vector<std::unique_ptr<Project>>& getProjects() const { return projects; }

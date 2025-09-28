@@ -26,6 +26,8 @@ void Sidebar::render() {
 
   renderCreateProjectPopup();
   renderCreateOrchestrationPopup();
+  renderDeleteOrchestrationConfirmation();
+  renderDeleteProjectConfirmation();
 }
 
 bool Sidebar::shouldShowNodeEditor() const {
@@ -60,7 +62,9 @@ void Sidebar::renderProjectsView() {
 
     ImGui::SameLine();
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-    if (ImGui::Button("X", ImVec2(button_width, 0))) { }
+    if (ImGui::Button("X", ImVec2(button_width, 0))) {
+      project_to_delete = project->id;
+    }
     ImGui::PopStyleColor();
     ImGui::PopID();
   }
@@ -106,7 +110,9 @@ void Sidebar::renderOrchestrationsView() {
 
     ImGui::SameLine();
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-    if (ImGui::Button("X", ImVec2(button_width, 0))) { }
+    if (ImGui::Button("X", ImVec2(button_width, 0))) {
+      orchestration_to_delete = orchestration->id;
+    }
     ImGui::PopStyleColor();
     ImGui::PopID();
   }
@@ -164,6 +170,68 @@ void Sidebar::renderCreateOrchestrationPopup() {
 
     ImGui::SameLine();
     if (ImGui::Button("Cancel")) {
+      ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
+  }
+}
+
+void Sidebar::renderDeleteOrchestrationConfirmation() {
+  if (orchestration_to_delete != -1) {
+    ImGui::OpenPopup("Delete Orchestration");
+  }
+
+  if (ImGui::BeginPopupModal("Delete Orchestration", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::Text("Are you sure you want to delete this orchestration?");
+    ImGui::Spacing();
+
+    if (ImGui::Button("Yes")) {
+      Project* current_project = project_manager.getProject(current_project_id);
+      if (current_project) {
+        if (current_orchestration_id == orchestration_to_delete) {
+          current_orchestration_id = -1;
+        }
+        current_project->removeOrchestration(orchestration_to_delete);
+      }
+      orchestration_to_delete = -1;
+      ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("No")) {
+      orchestration_to_delete = -1;
+      ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
+  }
+}
+
+void Sidebar::renderDeleteProjectConfirmation() {
+  if (project_to_delete != -1) {
+    ImGui::OpenPopup("Delete Project");
+  }
+
+  if (ImGui::BeginPopupModal("Delete Project", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::Text("Are you sure you want to delete this project?");
+    ImGui::Text("This will delete all orchestrations within it!");
+    ImGui::Spacing();
+
+    if (ImGui::Button("Yes")) {
+      if (current_project_id == project_to_delete) {
+        current_project_id = -1;
+        current_orchestration_id = -1;
+        current_view_mode = ViewMode::Projects;
+      }
+      project_manager.removeProject(project_to_delete);
+      project_to_delete = -1;
+      ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("No")) {
+      project_to_delete = -1;
       ImGui::CloseCurrentPopup();
     }
 
