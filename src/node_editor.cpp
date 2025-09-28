@@ -1,6 +1,7 @@
 #include "node_editor.h"
 #include "nodes.h"
 #include "link.h"
+#include "sidebar.h"
 #include <cstring>
 #include <algorithm>
 #include <memory>
@@ -27,7 +28,13 @@ void NodeEditor::shutdown() {
   }
 }
 
-void NodeEditor::render() {
+void NodeEditor::render(const Sidebar& sidebar) {
+  if (!sidebar.shouldShowNodeEditor()) {
+    return;
+  }
+
+  int orchestration_id = sidebar.getCurrentOrchestrationId();
+
   ImNodes::BeginNodeEditor();
 
   drawNodes();
@@ -40,22 +47,6 @@ void NodeEditor::render() {
 
   createLinks();
   handleContextMenu();
-}
-
-void NodeEditor::showEditor(const char* window_title) {
-  ImGuiIO& io = ImGui::GetIO(); (void)io;
-  ImGui::SetNextWindowPos(ImVec2(0,0));
-  ImGui::SetNextWindowSize(io.DisplaySize);
-  ImGui::Begin(window_title, nullptr,
-      ImGuiWindowFlags_NoCollapse |
-      ImGuiWindowFlags_NoResize   |
-      ImGuiWindowFlags_NoMove     |
-      ImGuiWindowFlags_NoTitleBar |
-      ImGuiWindowFlags_NoBringToFrontOnFocus);
-  render();
-  ImGui::End();
-  deleteNodes();
-  deleteLinks();
 }
 
 void NodeEditor::createNode(const std::string& nodeType, ImVec2 position) {

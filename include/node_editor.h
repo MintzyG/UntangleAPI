@@ -3,6 +3,7 @@
 #include "imnodes.h"
 #include "nodes.h"
 #include "link.h"
+#include "sidebar.h"
 #include <vector>
 #include <memory>
 
@@ -13,9 +14,7 @@ class NodeEditor {
 
     bool initialize();
     void shutdown();
-    void render();
-
-    void showEditor(const char* window_title);
+    void render(const Sidebar& sidebar);
 
   private:
     std::vector<std::unique_ptr<Node>> nodes;
