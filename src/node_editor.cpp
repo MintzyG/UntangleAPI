@@ -15,9 +15,6 @@ NodeEditor::~NodeEditor() {
 bool NodeEditor::initialize() {
   ImNodes::CreateContext();
   initialized = true;
-  createNode("Start", ImVec2(0,0));
-  createNode("GET", ImVec2(0,0));
-  createNode("POST", ImVec2(0,0));
   return true;
 }
 
@@ -28,59 +25,87 @@ void NodeEditor::shutdown() {
   }
 }
 
+OrchestrationData& NodeEditor::getOrchestrationData(int orchestration_id) {
+  auto it = orchestration_data.find(orchestration_id);
+  if (it == orchestration_data.end()) {
+    auto data = std::make_unique<OrchestrationData>();
+    createNode("Start", ImVec2(100, 200), *data);
+    createNode("GET", ImVec2(300, 200), *data);
+    createNode("POST", ImVec2(500, 200), *data);
+
+    OrchestrationData* data_ptr = data.get();
+    orchestration_data[orchestration_id] = std::move(data);
+    return *data_ptr;
+  } else {
+    for(auto& node : it->second->nodes) {
+      ImNodes::SetNodeGridSpacePos(node->getId(), node->getPosition());
+    }
+  }
+  return *it->second;
+}
+
 void NodeEditor::render(const Sidebar& sidebar) {
   if (!sidebar.shouldShowNodeEditor()) {
     return;
   }
 
+  int orchestration_id = sidebar.getCurrentOrchestrationId();
+  OrchestrationData& data = getOrchestrationData(orchestration_id);
+
   ImNodes::BeginNodeEditor();
 
-  drawNodes();
-  drawLinks();
+  drawNodes(data);
+  drawLinks(data);
 
   handleRightClick();
 
   ImNodes::MiniMap(0.2f, ImNodesMiniMapLocation_BottomRight);
   ImNodes::EndNodeEditor();
 
-  createLinks();
-  handleContextMenu();
+  for(auto& node : data.nodes) {
+    node->updatePosition();
+  }
+
+  createLinks(data);
+  handleContextMenu(data);
+  deleteNodes(data);
+  deleteLinks(data);
 }
 
-void NodeEditor::createNode(const std::string& nodeType, ImVec2 position) {
+void NodeEditor::createNode(const std::string& nodeType, ImVec2 position, OrchestrationData& data) {
   std::unique_ptr<Node> newNode;
 
   if (nodeType == "Start") {
-    newNode = std::make_unique<StartNode>(next_node_id);
+    newNode = std::make_unique<StartNode>(data.next_node_id);
   } else if (nodeType == "GET") {
-    newNode = std::make_unique<GetNode>(next_node_id);
+    newNode = std::make_unique<GetNode>(data.next_node_id);
   } else if (nodeType == "POST") {
-    newNode = std::make_unique<PostNode>(next_node_id);
+    newNode = std::make_unique<PostNode>(data.next_node_id);
   }
 
   if (newNode) {
-    ImNodes::SetNodeGridSpacePos(next_node_id, position);
+    newNode->setPosition(position);
 
-    nodes.push_back(std::move(newNode));
-    next_node_id += 10;
+    data.nodes.push_back(std::move(newNode));
+    data.next_node_id += 10;
   }
 }
 
-void NodeEditor::drawNodes() const {
-  for (auto const& n : nodes) {
+void NodeEditor::drawNodes(const OrchestrationData& data) const {
+  for (auto const& n : data.nodes) {
     n->draw();
   }
 }
 
-void NodeEditor::createLinks() {
+void NodeEditor::createLinks(OrchestrationData& data) {
   int start_attr, end_attr;
   if (ImNodes::IsLinkCreated(&start_attr, &end_attr)) {
-    links.push_back(std::make_unique<Link>(next_link_id++, start_attr, end_attr));
+    data.links.push_back(std::make_unique<Link>(data.next_link_id++, start_attr, end_attr));
   }
 }
 
-void NodeEditor::drawLinks() const {
-  for (const auto& link : links) {
+void NodeEditor::drawLinks(const OrchestrationData& data) const {
+  for (const auto& link : data.links) {
     ImNodes::Link(link->id, link->start_attr, link->end_attr);
   }
 }
@@ -92,7 +117,7 @@ void NodeEditor::handleRightClick() {
   }
 }
 
-void NodeEditor::handleContextMenu() {
+void NodeEditor::handleContextMenu(OrchestrationData& data) {
   if (right_clicked_in_editor) {
     int hovered_node_id, hovered_link_id, hovered_pin_id;
     bool node_hovered = ImNodes::IsNodeHovered(&hovered_node_id);
@@ -113,70 +138,70 @@ void NodeEditor::handleContextMenu() {
     ImGui::Separator();
 
     if (ImGui::MenuItem("Start Node")) {
-      createNode("Start", context_menu_pos);
+      createNode("Start", context_menu_pos, data);
     }
 
     if (ImGui::MenuItem("GET Node")) {
-      createNode("GET", context_menu_pos);
+      createNode("GET", context_menu_pos, data);
     }
 
     if (ImGui::MenuItem("POST Node")) {
-      createNode("POST", context_menu_pos);
+      createNode("POST", context_menu_pos, data);
     }
 
     ImGui::EndPopup();
   }
 }
 
-void NodeEditor::deleteLinks() {
+void NodeEditor::deleteLinks(OrchestrationData& data) {
   if (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Backspace)) {
     std::vector<int> selected_links;
     selected_links.resize(ImNodes::NumSelectedLinks());
     ImNodes::GetSelectedLinks(selected_links.data());
 
     for (int selected_id : selected_links) {
-      links.erase(
-          std::remove_if(links.begin(), links.end(),
+      data.links.erase(
+          std::remove_if(data.links.begin(), data.links.end(),
             [selected_id](const std::unique_ptr<Link>& l) {
             return l->id == selected_id;
             }),
-          links.end()
+          data.links.end()
           );
     }
   }
 
   int link_id;
   if (ImNodes::IsLinkDestroyed(&link_id)) {
-    links.erase(
-        std::remove_if(links.begin(), links.end(),
+    data.links.erase(
+        std::remove_if(data.links.begin(), data.links.end(),
           [link_id](const std::unique_ptr<Link>& l) {
           return l->id == link_id;
           }),
-        links.end()
+        data.links.end()
         );
   }
 }
 
-void NodeEditor::deleteNodes() {
+void NodeEditor::deleteNodes(OrchestrationData& data) {
   if (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Backspace)) {
-    nodes.erase(
-        std::remove_if(nodes.begin(), nodes.end(),
+    data.nodes.erase(
+        std::remove_if(data.nodes.begin(), data.nodes.end(),
           [&](const std::unique_ptr<Node>& n) {
           if (ImNodes::IsNodeSelected(n->getId())) {
           auto nodeAttributes = n->getAttributeIds();
-          links.erase(
-              std::remove_if(links.begin(), links.end(),
+          data.links.erase(
+              std::remove_if(data.links.begin(), data.links.end(),
                 [&](const std::unique_ptr<Link>& l) {
                 return std::find(nodeAttributes.begin(), nodeAttributes.end(), l->start_attr) != nodeAttributes.end() ||
                 std::find(nodeAttributes.begin(), nodeAttributes.end(), l->end_attr) != nodeAttributes.end();
                 }),
-              links.end()
+              data.links.end()
               );
           return true;
           }
           return false;
           }),
-        nodes.end()
+        data.nodes.end()
         );
   }
 }

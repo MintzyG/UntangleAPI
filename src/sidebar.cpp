@@ -53,8 +53,8 @@ void Sidebar::renderProjectsView() {
     float button_width = 20.0f;
     float available_width = ImGui::GetContentRegionAvail().x;
 
-    if (ImGui::Selectable(project->name.c_str(), current_project_id == project->id, 0 ,
-          ImVec2(available_width - button_width - ImGui::GetStyle().ItemSpacing.x, 0 ))) {
+    if (ImGui::Selectable(project->name.c_str(), current_project_id == project->id, 0,
+          ImVec2(available_width - button_width - ImGui::GetStyle().ItemSpacing.x, 0))) {
       current_project_id = project->id;
       current_orchestration_id = -1;
       current_view_mode = ViewMode::Orchestrations;
@@ -103,8 +103,8 @@ void Sidebar::renderOrchestrationsView() {
 
     bool is_selected = current_orchestration_id == orchestration->id;
 
-    if (ImGui::Selectable(orchestration->name.c_str(), is_selected, 0 ,
-          ImVec2(available_width - button_width - ImGui::GetStyle().ItemSpacing.x, 0 ))) {
+    if (ImGui::Selectable(orchestration->name.c_str(), is_selected, 0,
+          ImVec2(available_width - button_width - ImGui::GetStyle().ItemSpacing.x, 0))) {
       current_orchestration_id = orchestration->id;
     }
 

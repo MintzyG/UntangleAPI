@@ -7,7 +7,9 @@
 class Node {
 protected:
     int id;
+    int orchestration_id;
     std::string title;
+    ImVec2 position;
 
 public:
     Node(int nodeId, const std::string& nodeTitle);
@@ -16,6 +18,10 @@ public:
     virtual std::vector<int> getAttributeIds() const = 0;
     virtual void draw() = 0;
     int getId() const;
+
+    void setPosition(ImVec2 pos);
+    ImVec2 getPosition() const;
+    void updatePosition();
 };
 
 class StartNode : public Node {
