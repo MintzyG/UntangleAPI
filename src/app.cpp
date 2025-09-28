@@ -1,7 +1,7 @@
 #include "app.h"
 #include <stdio.h>
 
-App::App() {}
+App::App() : sidebar(project_manager) {}
 
 App::~App() {
   cleanup();
@@ -22,6 +22,11 @@ bool App::initialize() {
     printf("Failed to initialize node editor\n");
     return false;
   }
+
+  project_manager.addProject("Test project 1");
+  auto p = project_manager.getProject(1);
+  p->addOrchestration("Get Users");
+  project_manager.addProject("Test project 2");
 
   return true;
 }

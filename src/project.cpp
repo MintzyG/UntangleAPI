@@ -1,0 +1,62 @@
+#include "project.h"
+#include <algorithm>
+
+// -------------------- Orchestration --------------------
+Orchestration::Orchestration(int id, const std::string& name)
+  : id(id), name(name) {}
+
+  // -------------------- Project --------------------
+Project::Project(int id, const std::string& name)
+  : id(id), name(name) {}
+
+void Project::addOrchestration(const std::string& name) {
+  static int next_id = 1000;
+  orchestrations.push_back(std::make_unique<Orchestration>(next_id++, name));
+}
+
+void Project::removeOrchestration(int orchestration_id) {
+  orchestrations.erase(
+      std::remove_if(orchestrations.begin(), orchestrations.end(),
+        [orchestration_id](const std::unique_ptr<Orchestration>& o) {
+        return o->id == orchestration_id;
+        }),
+      orchestrations.end()
+      );
+}
+
+Orchestration* Project::getOrchestration(int orchestration_id) {
+  for(auto& orch : orchestrations) {
+    if (orch->id == orchestration_id) {
+      return orch.get();
+    }
+  }
+  return nullptr;
+}
+
+// -------------------- ProjectManager --------------------
+ProjectManager::ProjectManager() {}
+
+void ProjectManager::addProject(const std::string& name) {
+  projects.push_back(std::make_unique<Project>(next_project_id++, name));
+}
+
+void ProjectManager::removeProject(int project_id) {
+  projects.erase(
+      std::remove_if(projects.begin(), projects.end(),
+        [project_id](const std::unique_ptr<Project>& p) {
+        return p->id == project_id;
+        }),
+      projects.end()
+      );
+}
+
+Project* ProjectManager::getProject(int project_id) {
+  for(auto& proj : projects) {
+    if (proj->id == project_id) {
+      return proj.get();
+    }
+  }
+  return nullptr;
+}
+
+
