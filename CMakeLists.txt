@@ -28,9 +28,10 @@ set(IMGUI_BACKENDS
   ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-# ---- SDL2 + OpenGL (system packages on Arch) ----
+# ---- SDL2 + OpenGL + SQLite3 (system packages on Arch) ----
 find_package(SDL2 REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(SQLite3 REQUIRED)
 
 add_executable(imgui_minimal
   src/main.cpp
@@ -42,6 +43,7 @@ add_executable(imgui_minimal
   src/renderer.cpp
   src/nodes.cpp
   src/link.cpp
+  src/database.cpp
   ${imgui_SOURCE_DIR}/imgui.cpp
   ${imgui_SOURCE_DIR}/imgui_draw.cpp
   ${imgui_SOURCE_DIR}/imgui_tables.cpp
@@ -58,6 +60,7 @@ target_include_directories(imgui_minimal PRIVATE
   ${imgui_SOURCE_DIR}
   ${imgui_SOURCE_DIR}/backends
   ${SDL2_INCLUDE_DIRS}
+  ${SQLite3_INCLUDE_DIRS}
   # so we can include <imnodes.h>
   ${imnodes_SOURCE_DIR}
 )
@@ -65,6 +68,7 @@ target_include_directories(imgui_minimal PRIVATE
 target_link_libraries(imgui_minimal PRIVATE
   SDL2::SDL2
   OpenGL::GL
+  SQLite::SQLite3
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
