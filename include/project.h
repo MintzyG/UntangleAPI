@@ -20,6 +20,7 @@ class Project {
     Project(int id, const std::string& name);
 
     void addOrchestration(const std::string& name);
+    void addOrchestrationWithId(int id, const std::string& name);
     void removeOrchestration(int orchestration_id);
     Orchestration* getOrchestration(int orchestration_id);
   private:
@@ -31,6 +32,7 @@ class ProjectManager {
     ProjectManager();
 
     void addProject(const std::string& name);
+    void addProjectWithId(int id, const std::string& name);
     void removeProject(int project_id);
     Project* getProject(int project_id);
 

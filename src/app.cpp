@@ -23,17 +23,40 @@ bool App::initialize() {
     return false;
   }
 
-  project_manager.addProject("Test project 1");
-  auto p = project_manager.getProject(1);
-  p->addOrchestration("Get Users");
-  project_manager.addProject("Test project 2");
+  if (!database.initialize("untangle.db")) {
+    printf("Failed to initialize database\n");
+    return false;
+  }
+
+  printf("Loading data from database...\n");
+  if (!database.loadAll(project_manager, node_editor)) {
+    printf("No existing data found or failed to load, starting fresh\n");
+    
+    if (project_manager.getProjects().empty()) {
+      project_manager.addProject("Test project 1");
+      auto p = project_manager.getProject(1);
+      if (p) {
+        p->addOrchestration("Get Users");
+      }
+    }
+  }
 
   return true;
 }
 
 void App::cleanup() {
+  printf("Saving data before exit...\n");
+  saveData();
+  
   node_editor.shutdown();
   ui_manager.shutdown();
+  database.close();
+}
+
+void App::saveData() {
+  if (!database.saveAll(project_manager, node_editor)) {
+    printf("Failed to save data!\n");
+  }
 }
 
 void App::handleEvents(bool& done) {
@@ -48,6 +71,13 @@ void App::handleEvents(bool& done) {
     if (event.type == SDL_WINDOWEVENT) {
       if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
         done = true;
+      }
+    }
+
+    if (event.type == SDL_KEYDOWN) {
+      if (event.key.keysym.sym == SDLK_s && (event.key.keysym.mod & KMOD_CTRL)) {
+        printf("Manual save triggered (Ctrl+S)\n");
+        saveData();
       }
     }
   }
@@ -92,6 +122,9 @@ void App::render() {
   } else {
     node_editor.render(sidebar);
   }
+
+  ImGui::SetCursorPos(ImVec2(10, ImGui::GetWindowSize().y - 30));
+  ImGui::TextDisabled("Press Ctrl+S to save");
 
   ImGui::End();
 

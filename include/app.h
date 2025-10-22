@@ -4,6 +4,7 @@
 #include "node_editor.h"
 #include "sidebar.h"
 #include "project.h"
+#include "database.h"
 #include <SDL.h>
 
 class App {
@@ -19,10 +20,12 @@ class App {
     NodeEditor node_editor;
     ProjectManager project_manager;
     Sidebar sidebar;
+    Database database;
 
     bool initialize();
     void cleanup();
     void handleEvents(bool& done);
     void update();
     void render();
+    void saveData();
 };

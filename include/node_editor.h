@@ -8,6 +8,9 @@
 #include <memory>
 #include <map>
 
+struct NodeData;
+struct LinkData;
+
 struct OrchestrationData {
   std::vector<std::unique_ptr<Node>> nodes;
   std::vector<std::unique_ptr<Link>> links;
@@ -24,6 +27,12 @@ class NodeEditor {
     void shutdown();
     void render(const Sidebar& sidebar);
 
+    std::vector<NodeData> getAllNodesData() const;
+    std::vector<LinkData> getAllLinksData() const;
+    
+    void loadNodesData(const std::vector<NodeData>& nodes_data);
+    void loadLinksData(const std::vector<LinkData>& links_data);
+
   private:
     std::map<int, std::unique_ptr<OrchestrationData>> orchestration_data;
     bool initialized = false;
@@ -34,6 +43,7 @@ class NodeEditor {
     bool right_clicked_in_editor = false;
 
     void createNode(const std::string& nodeType, ImVec2 position, OrchestrationData& data);
+    void createNodeWithId(int node_id, const std::string& nodeType, ImVec2 position, OrchestrationData& data);
     void deleteNodes(OrchestrationData& data);
     void drawNodes(const OrchestrationData& data) const;
 

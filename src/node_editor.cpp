@@ -2,6 +2,7 @@
 #include "nodes.h"
 #include "link.h"
 #include "sidebar.h"
+#include "database.h"
 #include <cstring>
 #include <algorithm>
 #include <memory>
@@ -29,10 +30,7 @@ OrchestrationData& NodeEditor::getOrchestrationData(int orchestration_id) {
   auto it = orchestration_data.find(orchestration_id);
   if (it == orchestration_data.end()) {
     auto data = std::make_unique<OrchestrationData>();
-    createNode("Start", ImVec2(100, 200), *data);
-    createNode("GET", ImVec2(300, 200), *data);
-    createNode("POST", ImVec2(500, 200), *data);
-
+    
     OrchestrationData* data_ptr = data.get();
     orchestration_data[orchestration_id] = std::move(data);
     return *data_ptr;
@@ -88,6 +86,27 @@ void NodeEditor::createNode(const std::string& nodeType, ImVec2 position, Orches
 
     data.nodes.push_back(std::move(newNode));
     data.next_node_id += 10;
+  }
+}
+
+void NodeEditor::createNodeWithId(int node_id, const std::string& nodeType, ImVec2 position, OrchestrationData& data) {
+  std::unique_ptr<Node> newNode;
+
+  if (nodeType == "Start") {
+    newNode = std::make_unique<StartNode>(node_id);
+  } else if (nodeType == "GET") {
+    newNode = std::make_unique<GetNode>(node_id);
+  } else if (nodeType == "POST") {
+    newNode = std::make_unique<PostNode>(node_id);
+  }
+
+  if (newNode) {
+    newNode->setPosition(position);
+    data.nodes.push_back(std::move(newNode));
+    
+    if (node_id >= data.next_node_id) {
+      data.next_node_id = node_id + 10;
+    }
   }
 }
 
@@ -203,5 +222,72 @@ void NodeEditor::deleteNodes(OrchestrationData& data) {
           }),
         data.nodes.end()
         );
+  }
+}
+
+std::vector<NodeData> NodeEditor::getAllNodesData() const {
+  std::vector<NodeData> result;
+  
+  for (const auto& [orch_id, data] : orchestration_data) {
+    for (const auto& node : data->nodes) {
+      NodeData node_data;
+      node_data.id = node->getId();
+      node_data.orchestration_id = orch_id;
+      node_data.pos_x = node->getPosition().x;
+      node_data.pos_y = node->getPosition().y;
+      
+      if (dynamic_cast<StartNode*>(node.get())) {
+        node_data.type = "Start";
+      } else if (dynamic_cast<GetNode*>(node.get())) {
+        node_data.type = "GET";
+      } else if (dynamic_cast<PostNode*>(node.get())) {
+        node_data.type = "POST";
+      }
+      
+      result.push_back(node_data);
+    }
+  }
+  
+  return result;
+}
+
+std::vector<LinkData> NodeEditor::getAllLinksData() const {
+  std::vector<LinkData> result;
+  
+  for (const auto& [orch_id, data] : orchestration_data) {
+    for (const auto& link : data->links) {
+      LinkData link_data;
+      link_data.id = link->id;
+      link_data.orchestration_id = orch_id;
+      link_data.start_attr = link->start_attr;
+      link_data.end_attr = link->end_attr;
+      
+      result.push_back(link_data);
+    }
+  }
+  
+  return result;
+}
+
+void NodeEditor::loadNodesData(const std::vector<NodeData>& nodes_data) {
+  for (const auto& node_data : nodes_data) {
+    auto& data = getOrchestrationData(node_data.orchestration_id);
+    
+    ImVec2 position(node_data.pos_x, node_data.pos_y);
+    createNodeWithId(node_data.id, node_data.type, position, data);
+  }
+}
+
+void NodeEditor::loadLinksData(const std::vector<LinkData>& links_data) {
+  for (const auto& link_data : links_data) {
+    auto it = orchestration_data.find(link_data.orchestration_id);
+    if (it != orchestration_data.end()) {
+      auto& data = *it->second;
+      data.links.push_back(std::make_unique<Link>(link_data.id, link_data.start_attr, link_data.end_attr));
+      
+      if (link_data.id >= data.next_link_id) {
+        data.next_link_id = link_data.id + 1;
+      }
+    }
   }
 }
