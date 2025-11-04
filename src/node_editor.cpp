@@ -50,6 +50,21 @@ void NodeEditor::render(const Sidebar& sidebar) {
   int orchestration_id = sidebar.getCurrentOrchestrationId();
   OrchestrationData& data = getOrchestrationData(orchestration_id);
 
+  // Play button in top right
+  ImGuiIO& io = ImGui::GetIO();
+  ImGui::SetCursorPos(ImVec2(io.DisplaySize.x - Sidebar::SIDEBAR_WIDTH - 120, 10));
+  
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.6f, 0.1f, 1.0f));
+  
+  if (ImGui::Button("Execute", ImVec2(100, 30))) {
+    printf("Executing orchestration %d...\n", orchestration_id);
+    // TODO: Implement execution logic
+  }
+  
+  ImGui::PopStyleColor(3);
+
   ImNodes::BeginNodeEditor();
 
   drawNodes(data);
@@ -75,15 +90,32 @@ void NodeEditor::createNode(const std::string& nodeType, ImVec2 position, Orches
 
   if (nodeType == "Start") {
     newNode = std::make_unique<StartNode>(data.next_node_id);
-  } else if (nodeType == "GET") {
-    newNode = std::make_unique<GetNode>(data.next_node_id);
-  } else if (nodeType == "POST") {
-    newNode = std::make_unique<PostNode>(data.next_node_id);
+  } else if (nodeType == "HTTP_GET") {
+    newNode = std::make_unique<HttpGetNode>(data.next_node_id);
+  } else if (nodeType == "HTTP_POST") {
+    newNode = std::make_unique<HttpPostNode>(data.next_node_id);
+  } else if (nodeType == "HTTP_PUT") {
+    newNode = std::make_unique<HttpPutNode>(data.next_node_id);
+  } else if (nodeType == "HTTP_DELETE") {
+    newNode = std::make_unique<HttpDeleteNode>(data.next_node_id);
+  } else if (nodeType == "JSON_EXTRACT") {
+    newNode = std::make_unique<JsonExtractNode>(data.next_node_id);
+  } else if (nodeType == "SET_VARIABLE") {
+    newNode = std::make_unique<SetVariableNode>(data.next_node_id);
+  } else if (nodeType == "GET_VARIABLE") {
+    newNode = std::make_unique<GetVariableNode>(data.next_node_id);
+  } else if (nodeType == "IF_CONDITION") {
+    newNode = std::make_unique<IfConditionNode>(data.next_node_id);
+  } else if (nodeType == "DELAY") {
+    newNode = std::make_unique<DelayNode>(data.next_node_id);
+  } else if (nodeType == "ASSERT") {
+    newNode = std::make_unique<AssertNode>(data.next_node_id);
+  } else if (nodeType == "LOG") {
+    newNode = std::make_unique<LogNode>(data.next_node_id);
   }
 
   if (newNode) {
     newNode->setPosition(position);
-
     data.nodes.push_back(std::move(newNode));
     data.next_node_id += 10;
   }
@@ -94,10 +126,28 @@ void NodeEditor::createNodeWithId(int node_id, const std::string& nodeType, ImVe
 
   if (nodeType == "Start") {
     newNode = std::make_unique<StartNode>(node_id);
-  } else if (nodeType == "GET") {
-    newNode = std::make_unique<GetNode>(node_id);
-  } else if (nodeType == "POST") {
-    newNode = std::make_unique<PostNode>(node_id);
+  } else if (nodeType == "HTTP_GET") {
+    newNode = std::make_unique<HttpGetNode>(node_id);
+  } else if (nodeType == "HTTP_POST") {
+    newNode = std::make_unique<HttpPostNode>(node_id);
+  } else if (nodeType == "HTTP_PUT") {
+    newNode = std::make_unique<HttpPutNode>(node_id);
+  } else if (nodeType == "HTTP_DELETE") {
+    newNode = std::make_unique<HttpDeleteNode>(node_id);
+  } else if (nodeType == "JSON_EXTRACT") {
+    newNode = std::make_unique<JsonExtractNode>(node_id);
+  } else if (nodeType == "SET_VARIABLE") {
+    newNode = std::make_unique<SetVariableNode>(node_id);
+  } else if (nodeType == "GET_VARIABLE") {
+    newNode = std::make_unique<GetVariableNode>(node_id);
+  } else if (nodeType == "IF_CONDITION") {
+    newNode = std::make_unique<IfConditionNode>(node_id);
+  } else if (nodeType == "DELAY") {
+    newNode = std::make_unique<DelayNode>(node_id);
+  } else if (nodeType == "ASSERT") {
+    newNode = std::make_unique<AssertNode>(node_id);
+  } else if (nodeType == "LOG") {
+    newNode = std::make_unique<LogNode>(node_id);
   }
 
   if (newNode) {
@@ -153,19 +203,67 @@ void NodeEditor::handleContextMenu(OrchestrationData& data) {
   ImGui::SetNextWindowPos(context_menu_pos, ImGuiCond_Appearing);
 
   if (ImGui::BeginPopup("ContextMenu")) {
-    ImGui::Text("Add Node:");
+    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Add Node");
     ImGui::Separator();
 
-    if (ImGui::MenuItem("Start Node")) {
+    if (ImGui::MenuItem("Start")) {
       createNode("Start", context_menu_pos, data);
     }
 
-    if (ImGui::MenuItem("GET Node")) {
-      createNode("GET", context_menu_pos, data);
+    ImGui::Spacing();
+    ImGui::TextColored(ImVec4(0.5f, 0.7f, 1.0f, 1.0f), "HTTP Requests");
+    ImGui::Separator();
+
+    if (ImGui::MenuItem("GET Request")) {
+      createNode("HTTP_GET", context_menu_pos, data);
     }
 
-    if (ImGui::MenuItem("POST Node")) {
-      createNode("POST", context_menu_pos, data);
+    if (ImGui::MenuItem("POST Request")) {
+      createNode("HTTP_POST", context_menu_pos, data);
+    }
+
+    if (ImGui::MenuItem("PUT Request")) {
+      createNode("HTTP_PUT", context_menu_pos, data);
+    }
+
+    if (ImGui::MenuItem("DELETE Request")) {
+      createNode("HTTP_DELETE", context_menu_pos, data);
+    }
+
+    ImGui::Spacing();
+    ImGui::TextColored(ImVec4(0.7f, 0.5f, 1.0f, 1.0f), "Data Processing");
+    ImGui::Separator();
+
+    if (ImGui::MenuItem("JSON Extract")) {
+      createNode("JSON_EXTRACT", context_menu_pos, data);
+    }
+
+    if (ImGui::MenuItem("Set Variable")) {
+      createNode("SET_VARIABLE", context_menu_pos, data);
+    }
+
+    if (ImGui::MenuItem("Get Variable")) {
+      createNode("GET_VARIABLE", context_menu_pos, data);
+    }
+
+    ImGui::Spacing();
+    ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.4f, 1.0f), "Logic & Control");
+    ImGui::Separator();
+
+    if (ImGui::MenuItem("If Condition")) {
+      createNode("IF_CONDITION", context_menu_pos, data);
+    }
+
+    if (ImGui::MenuItem("Delay")) {
+      createNode("DELAY", context_menu_pos, data);
+    }
+
+    if (ImGui::MenuItem("Assert")) {
+      createNode("ASSERT", context_menu_pos, data);
+    }
+
+    if (ImGui::MenuItem("Log")) {
+      createNode("LOG", context_menu_pos, data);
     }
 
     ImGui::EndPopup();
@@ -235,14 +333,7 @@ std::vector<NodeData> NodeEditor::getAllNodesData() const {
       node_data.orchestration_id = orch_id;
       node_data.pos_x = node->getPosition().x;
       node_data.pos_y = node->getPosition().y;
-      
-      if (dynamic_cast<StartNode*>(node.get())) {
-        node_data.type = "Start";
-      } else if (dynamic_cast<GetNode*>(node.get())) {
-        node_data.type = "GET";
-      } else if (dynamic_cast<PostNode*>(node.get())) {
-        node_data.type = "POST";
-      }
+      node_data.type = node->getType();
       
       result.push_back(node_data);
     }
