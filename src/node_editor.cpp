@@ -2,10 +2,12 @@
 #include "nodes.h"
 #include "link.h"
 #include "sidebar.h"
+#include "executor.h"
 #include "database.h"
 #include <cstring>
 #include <algorithm>
 #include <memory>
+#include <map>
 
 NodeEditor::NodeEditor() {}
 
@@ -52,7 +54,7 @@ void NodeEditor::render(const Sidebar& sidebar) {
 
   // Play button in top right
   ImGuiIO& io = ImGui::GetIO();
-  ImGui::SetCursorPos(ImVec2(io.DisplaySize.x - Sidebar::SIDEBAR_WIDTH - 120, 10));
+  ImGui::SetCursorPos(ImVec2(io.DisplaySize.x - Sidebar::SIDEBAR_WIDTH - 240, 10));
   
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
   ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
@@ -60,11 +62,22 @@ void NodeEditor::render(const Sidebar& sidebar) {
   
   if (ImGui::Button("Execute", ImVec2(100, 30))) {
     printf("Executing orchestration %d...\n", orchestration_id);
-    // TODO: Implement execution logic
+    executeOrchestration(orchestration_id);
   }
   
   ImGui::PopStyleColor(3);
-
+  
+  // Execute selected node button
+  ImGui::SameLine();
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.5f, 0.2f, 1.0f));
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.6f, 0.3f, 1.0f));
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.4f, 0.1f, 1.0f));
+  
+  if (ImGui::Button("Execute Selected", ImVec2(120, 30))) {
+    executeSelectedNode();
+  }
+  
+  ImGui::PopStyleColor(3);
   ImNodes::BeginNodeEditor();
 
   drawNodes(data);
@@ -381,4 +394,132 @@ void NodeEditor::loadLinksData(const std::vector<LinkData>& links_data) {
       }
     }
   }
+}
+
+void NodeEditor::executeSelectedNode() {
+  std::vector<int> selected_nodes;
+  selected_nodes.resize(ImNodes::NumSelectedNodes());
+  ImNodes::GetSelectedNodes(selected_nodes.data());
+  
+  if (selected_nodes.empty()) {
+    printf("No node selected\n");
+    return;
+  }
+  
+  int selected_node_id = selected_nodes[0];
+  
+  for (auto& [orch_id, data] : orchestration_data) {
+    for (auto& node : data->nodes) {
+      if (node->getId() == selected_node_id) {
+        printf("\n=== Executing Single Node ===\n");
+        execution_context.execution_log.clear();
+        bool success = NodeExecutor::execute(node.get(), execution_context);
+        printf("Execution %s\n", success ? "SUCCESS" : "FAILED");
+        printf("=== End Execution ===\n\n");
+        return;
+      }
+    }
+  }
+  
+  printf("Selected node not found\n");
+}
+
+void NodeEditor::executeOrchestration(int orchestration_id) {
+  auto it = orchestration_data.find(orchestration_id);
+  if (it == orchestration_data.end()) {
+    printf("Orchestration not found\n");
+    return;
+  }
+  
+  auto& data = *it->second;
+  
+  printf("\n=== Executing Full Orchestration ===\n");
+  execution_context.execution_log.clear();
+  execution_context.variables.clear();
+  
+  Node* start_node = nullptr;
+  for (auto& node : data.nodes) {
+    if (node->getType() == "Start") {
+      start_node = node.get();
+      break;
+    }
+  }
+  
+  if (!start_node) {
+    printf("ERROR: No Start node found in orchestration\n");
+    return;
+  }
+  
+  if (!NodeExecutor::execute(start_node, execution_context)) {
+    printf("Start node execution failed\n");
+    return;
+  }
+  
+  std::vector<Node*> execution_queue;
+  std::map<int, bool> executed_nodes;
+  
+  auto start_attrs = start_node->getAttributeIds();
+  if (start_attrs.empty()) {
+    printf("Start node has no output\n");
+    return;
+  }
+  
+  int current_attr = start_attrs[0];
+  executed_nodes[start_node->getId()] = true;
+  
+  int max_iterations = 100;
+  int iterations = 0;
+  
+  while (iterations < max_iterations) {
+    iterations++;
+    
+    Link* next_link = nullptr;
+    for (auto& link : data.links) {
+      if (link->start_attr == current_attr) {
+        next_link = link.get();
+        break;
+      }
+    }
+    
+    if (!next_link) {
+      printf("No more connected nodes, execution complete\n");
+      break;
+    }
+    
+    Node* next_node = nullptr;
+    for (auto& node : data.nodes) {
+      if (executed_nodes[node->getId()]) continue;
+      
+      auto attrs = node->getAttributeIds();
+      for (int attr : attrs) {
+        if (attr == next_link->end_attr) {
+          next_node = node.get();
+          break;
+        }
+      }
+      if (next_node) break;
+    }
+    
+    if (!next_node) {
+      printf("Could not find next node in chain\n");
+      break;
+    }
+    
+    if (!NodeExecutor::execute(next_node, execution_context)) {
+      printf("Node execution failed, stopping\n");
+      break;
+    }
+    
+    executed_nodes[next_node->getId()] = true;
+    
+    // Get output attribute for next iteration (last attribute is usually output)
+    auto next_attrs = next_node->getAttributeIds();
+    if (!next_attrs.empty()) {
+      current_attr = next_attrs.back();
+    } else {
+      break;
+    }
+  }
+  
+  printf("=== End Orchestration Execution ===\n\n");
 }

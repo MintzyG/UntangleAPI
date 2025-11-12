@@ -44,6 +44,8 @@ public:
     std::vector<int> getAttributeIds() const override;
     void draw() override;
     std::string getType() const override { return "HTTP_GET"; }
+    std::string getUrl() const { return std::string(url); }
+    std::string getHeaders() const { return std::string(headers); }
 };
 
 class HttpPostNode : public Node {
@@ -56,6 +58,9 @@ public:
     std::vector<int> getAttributeIds() const override;
     void draw() override;
     std::string getType() const override { return "HTTP_POST"; }
+    std::string getUrl() const { return std::string(url); }
+    std::string getHeaders() const { return std::string(headers); }
+    std::string getBody() const { return std::string(body); }
 };
 
 class HttpPutNode : public Node {
@@ -68,6 +73,9 @@ public:
     std::vector<int> getAttributeIds() const override;
     void draw() override;
     std::string getType() const override { return "HTTP_PUT"; }
+    std::string getUrl() const { return std::string(url); }
+    std::string getHeaders() const { return std::string(headers); }
+    std::string getBody() const { return std::string(body); }
 };
 
 class HttpDeleteNode : public Node {
@@ -79,6 +87,8 @@ public:
     std::vector<int> getAttributeIds() const override;
     void draw() override;
     std::string getType() const override { return "HTTP_DELETE"; }
+    std::string getUrl() const { return std::string(url); }
+    std::string getHeaders() const { return std::string(headers); }
 };
 
 // Data Processing Nodes
@@ -100,6 +110,7 @@ public:
     std::vector<int> getAttributeIds() const override;
     void draw() override;
     std::string getType() const override { return "SET_VARIABLE"; }
+    std::string getVarName() const { return std::string(var_name); }
 };
 
 class GetVariableNode : public Node {
@@ -110,6 +121,7 @@ public:
     std::vector<int> getAttributeIds() const override;
     void draw() override;
     std::string getType() const override { return "GET_VARIABLE"; }
+    std::string getVarName() const { return std::string(var_name); }
 };
 
 // Logic Nodes
@@ -131,6 +143,7 @@ public:
     std::vector<int> getAttributeIds() const override;
     void draw() override;
     std::string getType() const override { return "DELAY"; }
+    std::string getDelayMs() const { return std::string(delay_ms); }
 };
 
 // Validation Node
@@ -153,4 +166,5 @@ public:
     std::vector<int> getAttributeIds() const override;
     void draw() override;
     std::string getType() const override { return "LOG"; }
+    std::string getMessage() const { return std::string(message); }
 };
