@@ -5,6 +5,7 @@
 #include <any>
 
 class Node;
+class Terminal;
 
 struct ExecutionContext {
     std::map<std::string, std::any> variables;
@@ -12,6 +13,7 @@ struct ExecutionContext {
     std::string last_response_body;
     int last_status_code = 0;
     std::string execution_log;
+    Terminal* terminal = nullptr;
     
     void setVariable(const std::string& name, const std::any& value);
     std::any getVariable(const std::string& name);

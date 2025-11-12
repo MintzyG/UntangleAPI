@@ -9,6 +9,7 @@
 #include <memory>
 #include <map>
 
+class Terminal;
 struct NodeData;
 struct LinkData;
 
@@ -26,7 +27,7 @@ class NodeEditor {
 
     bool initialize();
     void shutdown();
-    void render(const Sidebar& sidebar);
+    void render(const Sidebar& sidebar, Terminal* terminal = nullptr);
 
     std::vector<NodeData> getAllNodesData() const;
     std::vector<LinkData> getAllLinksData() const;
@@ -34,8 +35,8 @@ class NodeEditor {
     void loadNodesData(const std::vector<NodeData>& nodes_data);
     void loadLinksData(const std::vector<LinkData>& links_data);
 
-    void executeSelectedNode();
-    void executeOrchestration(int orchestration_id);
+    void executeSelectedNode(Terminal* terminal = nullptr);
+    void executeOrchestration(int orchestration_id, Terminal* terminal = nullptr);
     std::string getExecutionLog() const { return execution_context.execution_log; }
 
   private:

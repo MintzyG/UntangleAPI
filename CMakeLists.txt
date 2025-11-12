@@ -48,6 +48,7 @@ add_executable(imgui_minimal
   src/database.cpp
   src/http_client.cpp
   src/executor.cpp
+  src/terminal.cpp
   ${imgui_SOURCE_DIR}/imgui.cpp
   ${imgui_SOURCE_DIR}/imgui_draw.cpp
   ${imgui_SOURCE_DIR}/imgui_tables.cpp

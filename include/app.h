@@ -6,6 +6,7 @@
 #include "project.h"
 #include "database.h"
 #include <SDL.h>
+#include "terminal.h"
 
 class App {
   public:
@@ -21,6 +22,7 @@ class App {
     ProjectManager project_manager;
     Sidebar sidebar;
     Database database;
+    Terminal terminal;
 
     bool initialize();
     void cleanup();
