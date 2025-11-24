@@ -23,6 +23,10 @@ class App {
     Sidebar sidebar;
     Database database;
     Terminal terminal;
+    
+    float ui_scale = 1.0f;
+    bool sidebar_collapsed = false;
+    ImGuiStyle base_style;
 
     bool initialize();
     void cleanup();
@@ -30,4 +34,6 @@ class App {
     void update();
     void render();
     void saveData();
+    void applyUIScale();
+    void saveBaseStyle();
 };

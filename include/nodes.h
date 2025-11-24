@@ -37,8 +37,8 @@ public:
 // HTTP Request Nodes
 class HttpGetNode : public Node {
 private:
-    char url[512] = "https://api.example.com/users";
-    char headers[256] = "Authorization: Bearer token";
+    char url[512] = "https://jsonplaceholder.typicode.com/posts/1";
+    char headers[256] = "";
 public:
     HttpGetNode(int nodeId);
     std::vector<int> getAttributeIds() const override;
@@ -50,9 +50,9 @@ public:
 
 class HttpPostNode : public Node {
 private:
-    char url[512] = "https://api.example.com/users";
+    char url[512] = "https://jsonplaceholder.typicode.com/posts";
     char headers[256] = "Content-Type: application/json";
-    char body[512] = "{\n  \"name\": \"John\"\n}";
+    char body[512] = "{\n\"title\": \"hello world\",\n\"body\": \"this is a test post\",\n\"userId\": 1\n}";
 public:
     HttpPostNode(int nodeId);
     std::vector<int> getAttributeIds() const override;
@@ -65,9 +65,9 @@ public:
 
 class HttpPutNode : public Node {
 private:
-    char url[512] = "https://api.example.com/users/1";
+    char url[512] = "https://jsonplaceholder.typicode.com/posts/1";
     char headers[256] = "Content-Type: application/json";
-    char body[512] = "{\n  \"name\": \"Jane\"\n}";
+    char body[512] = "{\n\"id\": 1,\n\"title\": \"updated title\",\n\"body\": \"this post has been updated\",\n\"userId\": 1\n}";
 public:
     HttpPutNode(int nodeId);
     std::vector<int> getAttributeIds() const override;
@@ -80,8 +80,8 @@ public:
 
 class HttpDeleteNode : public Node {
 private:
-    char url[512] = "https://api.example.com/users/1";
-    char headers[256] = "Authorization: Bearer token";
+    char url[512] = "https://jsonplaceholder.typicode.com/posts/1";
+    char headers[256] = "";
 public:
     HttpDeleteNode(int nodeId);
     std::vector<int> getAttributeIds() const override;
