@@ -1,4 +1,5 @@
 #include "executor.h"
+#include "terminal.h"
 #include "nodes.h"
 #include <SDL.h>
 #include <iostream>
@@ -22,6 +23,9 @@ bool ExecutionContext::hasVariable(const std::string& name) {
 void ExecutionContext::log(const std::string& message) {
     execution_log += message + "\n";
     std::cout << "[EXEC] " << message << std::endl;
+    if (terminal) {
+        terminal->log("[EXEC] " + message);
+    }
 }
 
 // Helper to parse headers from string

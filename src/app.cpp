@@ -120,7 +120,28 @@ void App::render() {
       ImGui::Text("%s", message);
     }
   } else {
-    node_editor.render(sidebar);
+    float available_height = ImGui::GetContentRegionAvail().y - 40; // Reserve space for bottom bar
+    float terminal_height = terminal.isVisible() ? terminal.getHeight() : 0;
+    float node_editor_height = available_height - terminal_height;
+    
+    ImGui::SetCursorPos(ImVec2(ImGui::GetWindowSize().x - 120, 10));
+    if (terminal.isVisible()) {
+      if (ImGui::Button("Hide Terminal", ImVec2(110, 25))) {
+        terminal.toggleVisible();
+      }
+    } else {
+      if (ImGui::Button("Show Terminal", ImVec2(110, 25))) {
+        terminal.toggleVisible();
+      }
+    }
+    
+    ImGui::BeginChild("NodeEditorArea", ImVec2(0, node_editor_height), false, ImGuiWindowFlags_NoScrollbar);
+    node_editor.render(sidebar, &terminal);
+    ImGui::EndChild();
+    
+    if (terminal.isVisible()) {
+      terminal.render(available_height);
+    }
   }
 
   ImGui::SetCursorPos(ImVec2(10, ImGui::GetWindowSize().y - 30));

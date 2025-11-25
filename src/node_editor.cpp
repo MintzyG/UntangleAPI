@@ -3,6 +3,7 @@
 #include "link.h"
 #include "sidebar.h"
 #include "executor.h"
+#include "terminal.h"
 #include "database.h"
 #include <cstring>
 #include <algorithm>
@@ -44,7 +45,7 @@ OrchestrationData& NodeEditor::getOrchestrationData(int orchestration_id) {
   return *it->second;
 }
 
-void NodeEditor::render(const Sidebar& sidebar) {
+void NodeEditor::render(const Sidebar& sidebar, Terminal* terminal) {
   if (!sidebar.shouldShowNodeEditor()) {
     return;
   }
@@ -62,7 +63,7 @@ void NodeEditor::render(const Sidebar& sidebar) {
   
   if (ImGui::Button("Execute", ImVec2(100, 30))) {
     printf("Executing orchestration %d...\n", orchestration_id);
-    executeOrchestration(orchestration_id);
+    executeOrchestration(orchestration_id, terminal);
   }
   
   ImGui::PopStyleColor(3);
@@ -74,7 +75,7 @@ void NodeEditor::render(const Sidebar& sidebar) {
   ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.4f, 0.1f, 1.0f));
   
   if (ImGui::Button("Execute Selected", ImVec2(120, 30))) {
-    executeSelectedNode();
+    executeSelectedNode(terminal);
   }
   
   ImGui::PopStyleColor(3);
@@ -284,9 +285,16 @@ void NodeEditor::handleContextMenu(OrchestrationData& data) {
 }
 
 void NodeEditor::deleteLinks(OrchestrationData& data) {
+  if (ImGui::GetIO().WantCaptureKeyboard) {
+    return;
+  }
+  
   if (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Backspace)) {
+    int num_selected = ImNodes::NumSelectedLinks();
+    if (num_selected == 0) return;
+    
     std::vector<int> selected_links;
-    selected_links.resize(ImNodes::NumSelectedLinks());
+    selected_links.resize(num_selected);
     ImNodes::GetSelectedLinks(selected_links.data());
 
     for (int selected_id : selected_links) {
@@ -313,6 +321,10 @@ void NodeEditor::deleteLinks(OrchestrationData& data) {
 }
 
 void NodeEditor::deleteNodes(OrchestrationData& data) {
+  if (ImGui::GetIO().WantCaptureKeyboard) {
+    return;
+  }
+  
   if (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Backspace)) {
     data.nodes.erase(
         std::remove_if(data.nodes.begin(), data.nodes.end(),
@@ -396,13 +408,15 @@ void NodeEditor::loadLinksData(const std::vector<LinkData>& links_data) {
   }
 }
 
-void NodeEditor::executeSelectedNode() {
+void NodeEditor::executeSelectedNode(Terminal* terminal) {
   std::vector<int> selected_nodes;
   selected_nodes.resize(ImNodes::NumSelectedNodes());
   ImNodes::GetSelectedNodes(selected_nodes.data());
   
   if (selected_nodes.empty()) {
-    printf("No node selected\n");
+    std::string msg = "No node selected";
+    printf("%s\n", msg.c_str());
+    if (terminal) terminal->log(msg);
     return;
   }
   
@@ -411,31 +425,49 @@ void NodeEditor::executeSelectedNode() {
   for (auto& [orch_id, data] : orchestration_data) {
     for (auto& node : data->nodes) {
       if (node->getId() == selected_node_id) {
-        printf("\n=== Executing Single Node ===\n");
+        std::string msg = "\n=== Executing Single Node ===";
+        printf("%s\n", msg.c_str());
+        if (terminal) terminal->log(msg);
+        
         execution_context.execution_log.clear();
+        execution_context.terminal = terminal;
         bool success = NodeExecutor::execute(node.get(), execution_context);
-        printf("Execution %s\n", success ? "SUCCESS" : "FAILED");
-        printf("=== End Execution ===\n\n");
+        
+        msg = "Execution " + std::string(success ? "SUCCESS" : "FAILED");
+        printf("%s\n", msg.c_str());
+        if (terminal) terminal->log(msg);
+        
+        msg = "=== End Execution ===\n";
+        printf("%s\n", msg.c_str());
+        if (terminal) terminal->log(msg);
         return;
       }
     }
   }
   
-  printf("Selected node not found\n");
+  std::string msg = "Selected node not found";
+  printf("%s\n", msg.c_str());
+  if (terminal) terminal->log(msg);
 }
 
-void NodeEditor::executeOrchestration(int orchestration_id) {
+void NodeEditor::executeOrchestration(int orchestration_id, Terminal* terminal) {
   auto it = orchestration_data.find(orchestration_id);
   if (it == orchestration_data.end()) {
-    printf("Orchestration not found\n");
+    std::string msg = "Orchestration not found";
+    printf("%s\n", msg.c_str());
+    if (terminal) terminal->log(msg);
     return;
   }
   
   auto& data = *it->second;
   
-  printf("\n=== Executing Full Orchestration ===\n");
+  std::string msg = "\n=== Executing Full Orchestration ===";
+  printf("%s\n", msg.c_str());
+  if (terminal) terminal->log(msg);
+  
   execution_context.execution_log.clear();
   execution_context.variables.clear();
+  execution_context.terminal = terminal;
   
   Node* start_node = nullptr;
   for (auto& node : data.nodes) {
@@ -446,12 +478,16 @@ void NodeEditor::executeOrchestration(int orchestration_id) {
   }
   
   if (!start_node) {
-    printf("ERROR: No Start node found in orchestration\n");
+    msg = "ERROR: No Start node found in orchestration";
+    printf("%s\n", msg.c_str());
+    if (terminal) terminal->log(msg);
     return;
   }
   
   if (!NodeExecutor::execute(start_node, execution_context)) {
-    printf("Start node execution failed\n");
+    msg = "Start node execution failed";
+    printf("%s\n", msg.c_str());
+    if (terminal) terminal->log(msg);
     return;
   }
   
@@ -460,7 +496,9 @@ void NodeEditor::executeOrchestration(int orchestration_id) {
   
   auto start_attrs = start_node->getAttributeIds();
   if (start_attrs.empty()) {
-    printf("Start node has no output\n");
+    msg = "Start node has no output";
+    printf("%s\n", msg.c_str());
+    if (terminal) terminal->log(msg);
     return;
   }
   
@@ -482,7 +520,9 @@ void NodeEditor::executeOrchestration(int orchestration_id) {
     }
     
     if (!next_link) {
-      printf("No more connected nodes, execution complete\n");
+      msg = "No more connected nodes, execution complete";
+      printf("%s\n", msg.c_str());
+      if (terminal) terminal->log(msg);
       break;
     }
     
@@ -501,18 +541,21 @@ void NodeEditor::executeOrchestration(int orchestration_id) {
     }
     
     if (!next_node) {
-      printf("Could not find next node in chain\n");
+      msg = "Could not find next node in chain";
+      printf("%s\n", msg.c_str());
+      if (terminal) terminal->log(msg);
       break;
     }
     
     if (!NodeExecutor::execute(next_node, execution_context)) {
-      printf("Node execution failed, stopping\n");
+      msg = "Node execution failed, stopping";
+      printf("%s\n", msg.c_str());
+      if (terminal) terminal->log(msg);
       break;
     }
     
     executed_nodes[next_node->getId()] = true;
     
-    // Get output attribute for next iteration (last attribute is usually output)
     auto next_attrs = next_node->getAttributeIds();
     if (!next_attrs.empty()) {
       current_attr = next_attrs.back();
@@ -521,5 +564,7 @@ void NodeEditor::executeOrchestration(int orchestration_id) {
     }
   }
   
-  printf("=== End Orchestration Execution ===\n\n");
+  msg = "=== End Orchestration Execution ===\n";
+  printf("%s\n", msg.c_str());
+  if (terminal) terminal->log(msg);
 }
