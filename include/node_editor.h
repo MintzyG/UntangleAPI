@@ -3,6 +3,7 @@
 #include "imnodes.h"
 #include "nodes.h"
 #include "link.h"
+#include "executor.h"
 #include "sidebar.h"
 #include <vector>
 #include <memory>
@@ -33,9 +34,14 @@ class NodeEditor {
     void loadNodesData(const std::vector<NodeData>& nodes_data);
     void loadLinksData(const std::vector<LinkData>& links_data);
 
+    void executeSelectedNode();
+    void executeOrchestration(int orchestration_id);
+    std::string getExecutionLog() const { return execution_context.execution_log; }
+
   private:
     std::map<int, std::unique_ptr<OrchestrationData>> orchestration_data;
     bool initialized = false;
+    ExecutionContext execution_context;
 
     void handleContextMenu(OrchestrationData& data);
     void handleRightClick();

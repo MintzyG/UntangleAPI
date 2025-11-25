@@ -22,6 +22,8 @@ FetchContent_Declare(
 # just populate, don't "make available"
 FetchContent_Populate(imnodes)
 
+find_package(CURL REQUIRED)
+
 # ---- Backends ----
 set(IMGUI_BACKENDS
   ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
@@ -44,6 +46,8 @@ add_executable(imgui_minimal
   src/nodes.cpp
   src/link.cpp
   src/database.cpp
+  src/http_client.cpp
+  src/executor.cpp
   ${imgui_SOURCE_DIR}/imgui.cpp
   ${imgui_SOURCE_DIR}/imgui_draw.cpp
   ${imgui_SOURCE_DIR}/imgui_tables.cpp
@@ -69,6 +73,7 @@ target_link_libraries(imgui_minimal PRIVATE
   SDL2::SDL2
   OpenGL::GL
   SQLite::SQLite3
+  CURL::libcurl
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
