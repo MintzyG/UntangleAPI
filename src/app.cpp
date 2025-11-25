@@ -7,6 +7,10 @@ App::~App() {
   cleanup();
 }
 
+void App::saveBaseStyle() {
+  base_style = ImGui::GetStyle();
+}
+
 bool App::initialize() {
   if (!renderer.initialize()) {
     printf("Failed to initialize renderer\n");
@@ -27,6 +31,8 @@ bool App::initialize() {
     printf("Failed to initialize database\n");
     return false;
   }
+
+  saveBaseStyle();
 
   printf("Loading data from database...\n");
   if (!database.loadAll(project_manager, node_editor)) {
@@ -59,6 +65,18 @@ void App::saveData() {
   }
 }
 
+void App::applyUIScale() {
+  ImGuiStyle& style = ImGui::GetStyle();
+  ImGuiIO& io = ImGui::GetIO();
+  
+  style = base_style;
+  style.ScaleAllSizes(ui_scale);
+  
+  io.FontGlobalScale = ui_scale;
+  
+  printf("Applied UI scale: %.1fx\n", ui_scale);
+}
+
 void App::handleEvents(bool& done) {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
@@ -75,9 +93,46 @@ void App::handleEvents(bool& done) {
     }
 
     if (event.type == SDL_KEYDOWN) {
-      if (event.key.keysym.sym == SDLK_s && (event.key.keysym.mod & KMOD_CTRL)) {
+      bool ctrl_pressed = (event.key.keysym.mod & KMOD_CTRL);
+      
+      if (event.key.keysym.sym == SDLK_s && ctrl_pressed) {
         printf("Manual save triggered (Ctrl+S)\n");
         saveData();
+      }
+      
+      if ((event.key.keysym.sym == SDLK_PLUS || event.key.keysym.sym == SDLK_EQUALS) && ctrl_pressed) {
+        float old_scale = ui_scale;
+        ui_scale += 0.1f;
+        if (ui_scale > 2.0f) {
+          ui_scale = 2.0f;
+          printf("Maximum zoom reached: %.1fx\n", ui_scale);
+        } else {
+          applyUIScale();
+          printf("Zoom in: %.1fx (was %.1fx)\n", ui_scale, old_scale);
+        }
+      }
+      
+      if (event.key.keysym.sym == SDLK_MINUS && ctrl_pressed) {
+        float old_scale = ui_scale;
+        ui_scale -= 0.1f;
+        if (ui_scale < 0.5f) {
+          ui_scale = 0.5f;
+          printf("Minimum zoom reached: %.1fx\n", ui_scale);
+        } else {
+          applyUIScale();
+          printf("Zoom out: %.1fx (was %.1fx)\n", ui_scale, old_scale);
+        }
+      }
+      
+      if (event.key.keysym.sym == SDLK_0 && ctrl_pressed) {
+        ui_scale = 1.0f;
+        applyUIScale();
+        printf("Zoom reset: 1.0x\n");
+      }
+      
+      if (event.key.keysym.sym == SDLK_b && ctrl_pressed) {
+        sidebar_collapsed = !sidebar_collapsed;
+        printf("Sidebar %s\n", sidebar_collapsed ? "collapsed" : "expanded");
       }
     }
   }
@@ -92,17 +147,32 @@ void App::render() {
   renderer.clear();
 
   ui_manager.newFrame();
-  sidebar.render();
+  
+  float sidebar_width = sidebar_collapsed ? 0.0f : Sidebar::SIDEBAR_WIDTH;
+  
+  if (!sidebar_collapsed) {
+    sidebar.render();
+  }
 
   ImGuiIO& io = ImGui::GetIO();
-  ImGui::SetNextWindowPos(ImVec2(Sidebar::SIDEBAR_WIDTH, 0));
-  ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x - Sidebar::SIDEBAR_WIDTH, io.DisplaySize.y));
+  ImGui::SetNextWindowPos(ImVec2(sidebar_width, 0));
+  ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x - sidebar_width, io.DisplaySize.y));
 
   ImGui::Begin("Main Content", nullptr,
       ImGuiWindowFlags_NoCollapse |
       ImGuiWindowFlags_NoResize |
       ImGuiWindowFlags_NoMove |
       ImGuiWindowFlags_NoTitleBar);
+
+  if (sidebar_collapsed) {
+    ImGui::SetCursorPos(ImVec2(10, 10));
+    if (ImGui::Button("☰", ImVec2(40, 30))) {
+      sidebar_collapsed = false;
+    }
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Show Sidebar (Ctrl+B)");
+    }
+  }
 
   if (!sidebar.shouldShowNodeEditor()) {
     ImVec2 window_size = ImGui::GetWindowSize();
@@ -145,7 +215,7 @@ void App::render() {
   }
 
   ImGui::SetCursorPos(ImVec2(10, ImGui::GetWindowSize().y - 30));
-  ImGui::TextDisabled("Press Ctrl+S to save");
+  ImGui::TextDisabled("Ctrl+S: Save | Ctrl+B: Toggle Sidebar | Ctrl+/0: Zoom (%.1fx)", ui_scale);
 
   ImGui::End();
 
