@@ -1,5 +1,33 @@
 #include "nodes.h"
 #include <string>
+#include <sstream>
+#include <cstring>
+
+std::string escape_string(const std::string& str) {
+    std::string result;
+    for (char c : str) {
+        if (c == '|') result += "\\|";
+        else if (c == '\\') result += "\\\\";
+        else result += c;
+    }
+    return result;
+}
+
+std::string unescape_string(const std::string& str) {
+    std::string result;
+    bool escape = false;
+    for (char c : str) {
+        if (escape) {
+            result += c;
+            escape = false;
+        } else if (c == '\\') {
+            escape = true;
+        } else {
+            result += c;
+        }
+    }
+    return result;
+}
 
 // -------------------- Base --------------------
 Node::Node(int nodeId, const std::string& nodeTitle)
@@ -61,7 +89,7 @@ void HttpGetNode::draw() {
   ImNodes::BeginNode(id);
 
   ImNodes::BeginNodeTitleBar();
-  ImGui::TextUnformatted("🌐 HTTP GET");
+  ImGui::TextUnformatted("HTTP GET");
   ImNodes::EndNodeTitleBar();
 
   ImNodes::BeginInputAttribute(id + 1);
@@ -92,6 +120,24 @@ void HttpGetNode::draw() {
   ImNodes::PopColorStyle();
   ImNodes::PopColorStyle();
   ImNodes::PopColorStyle();
+}
+
+std::string HttpGetNode::serializeData() const {
+    return escape_string(std::string(url)) + "|" + escape_string(std::string(headers));
+}
+
+void HttpGetNode::deserializeData(const std::string& data) {
+    size_t pos = data.find('|');
+    if (pos != std::string::npos) {
+        std::string url_str = unescape_string(data.substr(0, pos));
+        std::string headers_str = unescape_string(data.substr(pos + 1));
+        
+        strncpy(url, url_str.c_str(), sizeof(url) - 1);
+        url[sizeof(url) - 1] = '\0';
+        
+        strncpy(headers, headers_str.c_str(), sizeof(headers) - 1);
+        headers[sizeof(headers) - 1] = '\0';
+    }
 }
 
 // -------------------- HttpPostNode --------------------
@@ -148,6 +194,36 @@ void HttpPostNode::draw() {
   ImNodes::PopColorStyle();
 }
 
+std::string HttpPostNode::serializeData() const {
+    return escape_string(std::string(url)) + "|" + 
+           escape_string(std::string(headers)) + "|" + 
+           escape_string(std::string(body));
+}
+
+void HttpPostNode::deserializeData(const std::string& data) {
+    std::istringstream ss(data);
+    std::string url_str, headers_str, body_str;
+    
+    size_t pos1 = data.find('|');
+    if (pos1 == std::string::npos) return;
+    
+    size_t pos2 = data.find('|', pos1 + 1);
+    if (pos2 == std::string::npos) return;
+    
+    url_str = unescape_string(data.substr(0, pos1));
+    headers_str = unescape_string(data.substr(pos1 + 1, pos2 - pos1 - 1));
+    body_str = unescape_string(data.substr(pos2 + 1));
+    
+    strncpy(url, url_str.c_str(), sizeof(url) - 1);
+    url[sizeof(url) - 1] = '\0';
+    
+    strncpy(headers, headers_str.c_str(), sizeof(headers) - 1);
+    headers[sizeof(headers) - 1] = '\0';
+    
+    strncpy(body, body_str.c_str(), sizeof(body) - 1);
+    body[sizeof(body) - 1] = '\0';
+}
+
 // -------------------- HttpPutNode --------------------
 HttpPutNode::HttpPutNode(int nodeId) : Node(nodeId, "HTTP PUT") {}
 
@@ -202,6 +278,33 @@ void HttpPutNode::draw() {
   ImNodes::PopColorStyle();
 }
 
+std::string HttpPutNode::serializeData() const {
+    return escape_string(std::string(url)) + "|" + 
+           escape_string(std::string(headers)) + "|" + 
+           escape_string(std::string(body));
+}
+
+void HttpPutNode::deserializeData(const std::string& data) {
+    size_t pos1 = data.find('|');
+    if (pos1 == std::string::npos) return;
+    
+    size_t pos2 = data.find('|', pos1 + 1);
+    if (pos2 == std::string::npos) return;
+    
+    std::string url_str = unescape_string(data.substr(0, pos1));
+    std::string headers_str = unescape_string(data.substr(pos1 + 1, pos2 - pos1 - 1));
+    std::string body_str = unescape_string(data.substr(pos2 + 1));
+    
+    strncpy(url, url_str.c_str(), sizeof(url) - 1);
+    url[sizeof(url) - 1] = '\0';
+    
+    strncpy(headers, headers_str.c_str(), sizeof(headers) - 1);
+    headers[sizeof(headers) - 1] = '\0';
+    
+    strncpy(body, body_str.c_str(), sizeof(body) - 1);
+    body[sizeof(body) - 1] = '\0';
+}
+
 // -------------------- HttpDeleteNode --------------------
 HttpDeleteNode::HttpDeleteNode(int nodeId) : Node(nodeId, "HTTP DELETE") {}
 
@@ -249,6 +352,24 @@ void HttpDeleteNode::draw() {
   ImNodes::PopColorStyle();
 }
 
+std::string HttpDeleteNode::serializeData() const {
+    return escape_string(std::string(url)) + "|" + escape_string(std::string(headers));
+}
+
+void HttpDeleteNode::deserializeData(const std::string& data) {
+    size_t pos = data.find('|');
+    if (pos != std::string::npos) {
+        std::string url_str = unescape_string(data.substr(0, pos));
+        std::string headers_str = unescape_string(data.substr(pos + 1));
+        
+        strncpy(url, url_str.c_str(), sizeof(url) - 1);
+        url[sizeof(url) - 1] = '\0';
+        
+        strncpy(headers, headers_str.c_str(), sizeof(headers) - 1);
+        headers[sizeof(headers) - 1] = '\0';
+    }
+}
+
 // -------------------- JsonExtractNode --------------------
 JsonExtractNode::JsonExtractNode(int nodeId) : Node(nodeId, "JSON Extract") {}
 
@@ -284,6 +405,16 @@ void JsonExtractNode::draw() {
   ImNodes::PopColorStyle();
   ImNodes::PopColorStyle();
   ImNodes::PopColorStyle();
+}
+
+std::string JsonExtractNode::serializeData() const {
+    return escape_string(std::string(json_path));
+}
+
+void JsonExtractNode::deserializeData(const std::string& data) {
+    std::string path_str = unescape_string(data);
+    strncpy(json_path, path_str.c_str(), sizeof(json_path) - 1);
+    json_path[sizeof(json_path) - 1] = '\0';
 }
 
 // -------------------- SetVariableNode --------------------
@@ -322,6 +453,16 @@ void SetVariableNode::draw() {
   ImNodes::PopColorStyle();
 }
 
+std::string SetVariableNode::serializeData() const {
+    return escape_string(std::string(var_name));
+}
+
+void SetVariableNode::deserializeData(const std::string& data) {
+    std::string name_str = unescape_string(data);
+    strncpy(var_name, name_str.c_str(), sizeof(var_name) - 1);
+    var_name[sizeof(var_name) - 1] = '\0';
+}
+
 // -------------------- GetVariableNode --------------------
 GetVariableNode::GetVariableNode(int nodeId) : Node(nodeId, "Get Variable") {}
 
@@ -352,6 +493,16 @@ void GetVariableNode::draw() {
   ImNodes::PopColorStyle();
   ImNodes::PopColorStyle();
   ImNodes::PopColorStyle();
+}
+
+std::string GetVariableNode::serializeData() const {
+    return escape_string(std::string(var_name));
+}
+
+void GetVariableNode::deserializeData(const std::string& data) {
+    std::string name_str = unescape_string(data);
+    strncpy(var_name, name_str.c_str(), sizeof(var_name) - 1);
+    var_name[sizeof(var_name) - 1] = '\0';
 }
 
 // -------------------- IfConditionNode --------------------
@@ -395,6 +546,16 @@ void IfConditionNode::draw() {
   ImNodes::PopColorStyle();
 }
 
+std::string IfConditionNode::serializeData() const {
+    return escape_string(std::string(condition));
+}
+
+void IfConditionNode::deserializeData(const std::string& data) {
+    std::string cond_str = unescape_string(data);
+    strncpy(condition, cond_str.c_str(), sizeof(condition) - 1);
+    condition[sizeof(condition) - 1] = '\0';
+}
+
 // -------------------- DelayNode --------------------
 DelayNode::DelayNode(int nodeId) : Node(nodeId, "Delay") {}
 
@@ -429,6 +590,16 @@ void DelayNode::draw() {
   ImNodes::PopColorStyle();
   ImNodes::PopColorStyle();
   ImNodes::PopColorStyle();
+}
+
+std::string DelayNode::serializeData() const {
+    return escape_string(std::string(delay_ms));
+}
+
+void DelayNode::deserializeData(const std::string& data) {
+    std::string delay_str = unescape_string(data);
+    strncpy(delay_ms, delay_str.c_str(), sizeof(delay_ms) - 1);
+    delay_ms[sizeof(delay_ms) - 1] = '\0';
 }
 
 // -------------------- AssertNode --------------------
@@ -472,6 +643,16 @@ void AssertNode::draw() {
   ImNodes::PopColorStyle();
 }
 
+std::string AssertNode::serializeData() const {
+    return escape_string(std::string(assertion));
+}
+
+void AssertNode::deserializeData(const std::string& data) {
+    std::string assert_str = unescape_string(data);
+    strncpy(assertion, assert_str.c_str(), sizeof(assertion) - 1);
+    assertion[sizeof(assertion) - 1] = '\0';
+}
+
 // -------------------- LogNode --------------------
 LogNode::LogNode(int nodeId) : Node(nodeId, "Log") {}
 
@@ -506,4 +687,14 @@ void LogNode::draw() {
   ImNodes::PopColorStyle();
   ImNodes::PopColorStyle();
   ImNodes::PopColorStyle();
+}
+
+std::string LogNode::serializeData() const {
+    return escape_string(std::string(message));
+}
+
+void LogNode::deserializeData(const std::string& data) {
+    std::string msg_str = unescape_string(data);
+    strncpy(message, msg_str.c_str(), sizeof(message) - 1);
+    message[sizeof(message) - 1] = '\0';
 }

@@ -12,6 +12,7 @@ struct NodeData {
     std::string type;
     float pos_x;
     float pos_y;
+    std::string data;
 };
 
 struct LinkData {
