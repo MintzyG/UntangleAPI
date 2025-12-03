@@ -51,6 +51,7 @@ bool Database::createTables() {
             type TEXT NOT NULL,
             pos_x REAL NOT NULL,
             pos_y REAL NOT NULL,
+            data TEXT,
             FOREIGN KEY (orchestration_id) REFERENCES orchestrations(id) ON DELETE CASCADE
         );
     )";
@@ -156,7 +157,7 @@ bool Database::saveNodes(NodeEditor& node_editor) {
     
     clearTable("nodes");
     
-    const char* sql = "INSERT INTO nodes (id, orchestration_id, type, pos_x, pos_y) VALUES (?, ?, ?, ?, ?);";
+    const char* sql = "INSERT INTO nodes (id, orchestration_id, type, pos_x, pos_y, data) VALUES (?, ?, ?, ?, ?, ?);";
     sqlite3_stmt* stmt = nullptr;
     
     sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
@@ -168,6 +169,7 @@ bool Database::saveNodes(NodeEditor& node_editor) {
         sqlite3_bind_text(stmt, 3, node_data.type.c_str(), -1, SQLITE_TRANSIENT);
         sqlite3_bind_double(stmt, 4, node_data.pos_x);
         sqlite3_bind_double(stmt, 5, node_data.pos_y);
+        sqlite3_bind_text(stmt, 6, node_data.data.c_str(), -1, SQLITE_TRANSIENT);
         
         if (sqlite3_step(stmt) != SQLITE_DONE) {
             printf("Failed to save node: %s\n", sqlite3_errmsg(db));
@@ -248,7 +250,7 @@ bool Database::loadProjects(ProjectManager& project_manager) {
 bool Database::loadNodes(NodeEditor& node_editor) {
     if (!db) return false;
     
-    const char* sql = "SELECT id, orchestration_id, type, pos_x, pos_y FROM nodes ORDER BY orchestration_id, id;";
+    const char* sql = "SELECT id, orchestration_id, type, pos_x, pos_y, data FROM nodes ORDER BY orchestration_id, id;";
     sqlite3_stmt* stmt = nullptr;
     
     sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
@@ -262,6 +264,11 @@ bool Database::loadNodes(NodeEditor& node_editor) {
         node_data.type = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         node_data.pos_x = sqlite3_column_double(stmt, 3);
         node_data.pos_y = sqlite3_column_double(stmt, 4);
+        
+        const char* data_text = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+        if (data_text) {
+            node_data.data = data_text;
+        }
         
         nodes_data.push_back(node_data);
     }

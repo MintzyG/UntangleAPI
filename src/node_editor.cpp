@@ -53,7 +53,6 @@ void NodeEditor::render(const Sidebar& sidebar, Terminal* terminal) {
   int orchestration_id = sidebar.getCurrentOrchestrationId();
   OrchestrationData& data = getOrchestrationData(orchestration_id);
 
-  // Play button in top right
   ImGuiIO& io = ImGui::GetIO();
   ImGui::SetCursorPos(ImVec2(io.DisplaySize.x - Sidebar::SIDEBAR_WIDTH - 240, 10));
   
@@ -68,7 +67,6 @@ void NodeEditor::render(const Sidebar& sidebar, Terminal* terminal) {
   
   ImGui::PopStyleColor(3);
   
-  // Execute selected node button
   ImGui::SameLine();
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.5f, 0.2f, 1.0f));
   ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.6f, 0.3f, 1.0f));
@@ -359,6 +357,7 @@ std::vector<NodeData> NodeEditor::getAllNodesData() const {
       node_data.pos_x = node->getPosition().x;
       node_data.pos_y = node->getPosition().y;
       node_data.type = node->getType();
+      node_data.data = node->serializeData();
       
       result.push_back(node_data);
     }
@@ -391,6 +390,10 @@ void NodeEditor::loadNodesData(const std::vector<NodeData>& nodes_data) {
     
     ImVec2 position(node_data.pos_x, node_data.pos_y);
     createNodeWithId(node_data.id, node_data.type, position, data);
+    
+    if (!data.nodes.empty() && !node_data.data.empty()) {
+      data.nodes.back()->deserializeData(node_data.data);
+    }
   }
 }
 
